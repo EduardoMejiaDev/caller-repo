@@ -1,4 +1,4 @@
-name: Orchestrator
+name: Mobile Test Orchestrator
 
 on:
   push:
@@ -6,71 +6,91 @@ on:
   workflow_dispatch:
 
 jobs:
-  dispatch-valid:
+  test-ios:
     runs-on: ubuntu-latest
     steps:
-      - name: Dispatch valid payload
+      - name: Dispatch iOS suite
         id: dispatch
         uses: benc-uk/workflow-dispatch@v1
         with:
-          workflow: Data Processor
+          workflow: Mobile App Tester
           repo: EduardoMejiaDev/target-repo
           ref: main
-          inputs: '{ "payload": "{\"name\":\"Alice\",\"email\":\"alice@test.com\",\"score\":95}" }'
+          inputs: '{ "platform": "ios", "app_name": "MyApp", "version": "2.4.1", "build_number": 42, "run_tests": true }'
           token: ${{ secrets.DISPATCH_TOKEN }}
           wait-for-completion: true
           sync-status: true
 
-      - name: Inspect run
+      - name: iOS outcome
         if: always()
         env:
-          GH_TOKEN: ${{ secrets.DISPATCH_TOKEN }}
+          OUTCOME: ${{ steps.dispatch.outcome }}
         run: |
-          echo "## Valid Payload Run" >> "$GITHUB_STEP_SUMMARY"
-          echo "Run URL: [${{ steps.dispatch.outputs.runUrlHtml }}](${{ steps.dispatch.outputs.runUrlHtml }})" >> "$GITHUB_STEP_SUMMARY"
-          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "## iOS Test Suite" >> "$GITHUB_STEP_SUMMARY"
+          echo "Run: [${{ steps.dispatch.outputs.runUrlHtml }}](${{ steps.dispatch.outputs.runUrlHtml }})" >> "$GITHUB_STEP_SUMMARY"
+          if [ "$OUTCOME" = "success" ]; then
+            echo "**Result:** ✅ All iOS checks passed" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "**Result:** ❌ iOS suite failed" >> "$GITHUB_STEP_SUMMARY"
+          fi
 
-          echo "### Jobs" >> "$GITHUB_STEP_SUMMARY"
-          echo '```' >> "$GITHUB_STEP_SUMMARY"
-          curl -sL \
-            -H "Authorization: token $GH_TOKEN" \
-            -H "Accept: application/vnd.github+json" \
-            "https://api.github.com/repos/EduardoMejiaDev/target-repo/actions/runs/${{ steps.dispatch.outputs.runId }}/jobs" \
-            | jq -r '.jobs[] | "\(.name): \(.status) → \(.conclusion // "-")"'
-          echo '```' >> "$GITHUB_STEP_SUMMARY"
-
-  dispatch-invalid:
+  test-android:
     runs-on: ubuntu-latest
     steps:
-      - name: Dispatch invalid payload
+      - name: Dispatch Android suite
         id: dispatch
         uses: benc-uk/workflow-dispatch@v1
         with:
-          workflow: Data Processor
+          workflow: Mobile App Tester
           repo: EduardoMejiaDev/target-repo
           ref: main
-          inputs: '{ "payload": "{\"name\":\"\",\"email\":\"bademail\",\"score\":999}" }'
+          inputs: '{ "platform": "android", "app_name": "MyApp", "version": "2.4.1", "build_number": 42, "run_tests": true }'
           token: ${{ secrets.DISPATCH_TOKEN }}
           wait-for-completion: true
           sync-status: true
 
-      - name: Inspect run
+      - name: Android outcome
         if: always()
         env:
-          GH_TOKEN: ${{ secrets.DISPATCH_TOKEN }}
+          OUTCOME: ${{ steps.dispatch.outcome }}
         run: |
-          echo "## Invalid Payload Run" >> "$GITHUB_STEP_SUMMARY"
-          echo "Run URL: [${{ steps.dispatch.outputs.runUrlHtml }}](${{ steps.dispatch.outputs.runUrlHtml }})" >> "$GITHUB_STEP_SUMMARY"
-          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "## Android Test Suite" >> "$GITHUB_STEP_SUMMARY"
+          echo "Run: [${{ steps.dispatch.outputs.runUrlHtml }}](${{ steps.dispatch.outputs.runUrlHtml }})" >> "$GITHUB_STEP_SUMMARY"
+          if [ "$OUTCOME" = "success" ]; then
+            echo "**Result:** ✅ All Android checks passed" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "**Result:** ❌ Android suite failed" >> "$GITHUB_STEP_SUMMARY"
+          fi
 
-          echo "### Jobs" >> "$GITHUB_STEP_SUMMARY"
-          echo '```' >> "$GITHUB_STEP_SUMMARY"
-          curl -sL \
-            -H "Authorization: token $GH_TOKEN" \
-            -H "Accept: application/vnd.github+json" \
-            "https://api.github.com/repos/EduardoMejiaDev/target-repo/actions/runs/${{ steps.dispatch.outputs.runId }}/jobs" \
-            | jq -r '.jobs[] | "\(.name): \(.status) → \(.conclusion // "-")"'
-          echo '```' >> "$GITHUB_STEP_SUMMARY"
+  test-invalid:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Dispatch invalid request
+        id: dispatch
+        uses: benc-uk/workflow-dispatch@v1
+        with:
+          workflow: Mobile App Tester
+          repo: EduardoMejiaDev/target-repo
+          ref: main
+          inputs: '{ "platform": "windows", "app_name": "", "version": "abc", "build_number": 0, "run_tests": false }'
+          token: ${{ secrets.DISPATCH_TOKEN }}
+          wait-for-completion: true
+          sync-status: true
 
-          echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "Expected: validate job fails (empty name, invalid email, score > 100)" >> "$GITHUB_STEP_SUMMARY"
+      - name: Invalid outcome
+        if: always()
+        env:
+          OUTCOME: ${{ steps.dispatch.outcome }}
+        run: |
+          echo "## Invalid Request (validation gate)" >> "$GITHUB_STEP_SUMMARY"
+          echo "Run: [${{ steps.dispatch.outputs.runUrlHtml }}](${{ steps.dispatch.outputs.runUrlHtml }})" >> "$GITHUB_STEP_SUMMARY"
+          if [ "$OUTCOME" = "failure" ]; then
+            echo "**Result:** ✅ Correctly rejected — validation gate works" >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "Rejected for:" >> "$GITHUB_STEP_SUMMARY"
+            echo "- platform 'windows' (must be ios or android)" >> "$GITHUB_STEP_SUMMARY"
+            echo "- version 'abc' (must be semver)" >> "$GITHUB_STEP_SUMMARY"
+            echo "- build_number 0 (must be >= 1)" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "**Result:** ⚠️ Unexpected success — validation may have a gap" >> "$GITHUB_STEP_SUMMARY"
+          fi
