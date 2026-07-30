@@ -1,0 +1,19 @@
+name: Call Remote Workflow
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  dispatch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Invoke workflow in target-repo
+        uses: benc-uk/workflow-dispatch@v1
+        with:
+          workflow: my-workflow.yaml
+          repo: EduardoMejiaDev/target-repo
+          ref: main
+          inputs: '{ "message": "hello from caller-repo", "something": true }'
+          token: ${{ secrets.DISPATCH_TOKEN }}
