@@ -17,3 +17,5 @@ jobs:
           ref: main
           inputs: '{ "message": "hello from caller-repo", "something": true }'
           token: ${{ secrets.DISPATCH_TOKEN }}
+          wait-for-completion: true
+          sync-status: true
