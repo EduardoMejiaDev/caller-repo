@@ -1,4 +1,4 @@
-name: Call Remote Workflow
+name: Orchestrator
 
 on:
   push:
@@ -6,14 +6,71 @@ on:
   workflow_dispatch:
 
 jobs:
-  dispatch:
+  dispatch-valid:
     runs-on: ubuntu-latest
     steps:
-      - name: Invoke workflow in target-repo
+      - name: Dispatch valid payload
+        id: dispatch
         uses: benc-uk/workflow-dispatch@v1
         with:
-          workflow: My Workflow
+          workflow: Data Processor
           repo: EduardoMejiaDev/target-repo
           ref: main
-          inputs: '{ "message": "hello from caller-repo", "something": true }'
+          inputs: '{ "payload": "{\"name\":\"Alice\",\"email\":\"alice@test.com\",\"score\":95}" }'
           token: ${{ secrets.DISPATCH_TOKEN }}
+          wait-for-completion: true
+          sync-status: true
+
+      - name: Inspect run
+        if: always()
+        env:
+          GH_TOKEN: ${{ secrets.DISPATCH_TOKEN }}
+        run: |
+          echo "## Valid Payload Run" >> "$GITHUB_STEP_SUMMARY"
+          echo "Run URL: [${{ steps.dispatch.outputs.runUrlHtml }}](${{ steps.dispatch.outputs.runUrlHtml }})" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+
+          echo "### Jobs" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          curl -sL \
+            -H "Authorization: token $GH_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/EduardoMejiaDev/target-repo/actions/runs/${{ steps.dispatch.outputs.runId }}/jobs" \
+            | jq -r '.jobs[] | "\(.name): \(.status) → \(.conclusion // "-")"'
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+
+  dispatch-invalid:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Dispatch invalid payload
+        id: dispatch
+        uses: benc-uk/workflow-dispatch@v1
+        with:
+          workflow: Data Processor
+          repo: EduardoMejiaDev/target-repo
+          ref: main
+          inputs: '{ "payload": "{\"name\":\"\",\"email\":\"bademail\",\"score\":999}" }'
+          token: ${{ secrets.DISPATCH_TOKEN }}
+          wait-for-completion: true
+          sync-status: true
+
+      - name: Inspect run
+        if: always()
+        env:
+          GH_TOKEN: ${{ secrets.DISPATCH_TOKEN }}
+        run: |
+          echo "## Invalid Payload Run" >> "$GITHUB_STEP_SUMMARY"
+          echo "Run URL: [${{ steps.dispatch.outputs.runUrlHtml }}](${{ steps.dispatch.outputs.runUrlHtml }})" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+
+          echo "### Jobs" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          curl -sL \
+            -H "Authorization: token $GH_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/EduardoMejiaDev/target-repo/actions/runs/${{ steps.dispatch.outputs.runId }}/jobs" \
+            | jq -r '.jobs[] | "\(.name): \(.status) → \(.conclusion // "-")"'
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "Expected: validate job fails (empty name, invalid email, score > 100)" >> "$GITHUB_STEP_SUMMARY"
