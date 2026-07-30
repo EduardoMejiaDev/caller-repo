@@ -12,10 +12,8 @@ jobs:
       - name: Invoke workflow in target-repo
         uses: benc-uk/workflow-dispatch@v1
         with:
-          workflow: my-workflow.yaml
+          workflow: My Workflow
           repo: EduardoMejiaDev/target-repo
           ref: main
           inputs: '{ "message": "hello from caller-repo", "something": true }'
           token: ${{ secrets.DISPATCH_TOKEN }}
-          wait-for-completion: true
-          sync-status: true
