@@ -16,7 +16,7 @@ jobs:
           workflow: Mobile App Tester
           repo: EduardoMejiaDev/target-repo
           ref: main
-          inputs: '{ "platform": "ios", "app_name": "MyApp", "version": "2.4.1", "build_number": 42, "run_tests": true }'
+          inputs: '{ "platform": "ios", "app_name": "MyApp", "version": "2.4.1", "build_number": "42", "run_tests": true }'
           token: ${{ secrets.DISPATCH_TOKEN }}
           wait-for-completion: true
           sync-status: true
@@ -44,7 +44,7 @@ jobs:
           workflow: Mobile App Tester
           repo: EduardoMejiaDev/target-repo
           ref: main
-          inputs: '{ "platform": "android", "app_name": "MyApp", "version": "2.4.1", "build_number": 42, "run_tests": true }'
+          inputs: '{ "platform": "android", "app_name": "MyApp", "version": "2.4.1", "build_number": "42", "run_tests": true }'
           token: ${{ secrets.DISPATCH_TOKEN }}
           wait-for-completion: true
           sync-status: true
@@ -72,7 +72,7 @@ jobs:
           workflow: Mobile App Tester
           repo: EduardoMejiaDev/target-repo
           ref: main
-          inputs: '{ "platform": "windows", "app_name": "", "version": "abc", "build_number": 0, "run_tests": false }'
+          inputs: '{ "platform": "windows", "app_name": "", "version": "abc", "build_number": "0", "run_tests": false }'
           token: ${{ secrets.DISPATCH_TOKEN }}
           wait-for-completion: true
           sync-status: true
