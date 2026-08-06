@@ -11,7 +11,7 @@ jobs:
     steps:
       - name: Dispatch iOS suite
         id: dispatch
-        uses: benc-uk/workflow-dispatch@v1
+        uses: step-security/workflow-dispatch@v024752877e2bfa07299ee4204cc5f7e7c14ff930
         with:
           workflow: Mobile App Tester
           repo: EduardoMejiaDev/target-repo
